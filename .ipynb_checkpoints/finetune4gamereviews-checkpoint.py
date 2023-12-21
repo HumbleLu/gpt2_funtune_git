@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, getopt
 import time
 import datetime
 import pandas as pd
@@ -11,6 +11,25 @@ from torch.utils.data import Dataset, DataLoader, random_split, RandomSampler, S
 from transformers import GPT2LMHeadModel,  GPT2Tokenizer, GPT2Config, GPT2LMHeadModel
 from transformers import AdamW, get_linear_schedule_with_warmup
 
+# parsing arguments
+
+opts, args = getopt.getopt(sys.argv[1:], 'i:o:s:h', ['ifile', 'odir', 'sample_size', 'help'])
+
+for opt, arg in opts:
+  if opt == '-h':
+     print ('test.py -i <input_file> -o <output_dir> -s <sample_size>')
+     sys.exit()
+  elif opt in ("-i", "--ifile"):
+      input_file = arg
+  elif opt in ("-o", "--odir"):
+      output_dir = arg
+  elif opt in ("-s", "--sample_size"):
+      sample_size = int(arg)
+
+print ('Input file:', input_file)
+print ('Output directory:', output_dir)
+print ('Sample size:', sample_size)
+
 # Load the pre-trained DistilGPT-2 model and tokenizer
 model = GPT2LMHeadModel.from_pretrained('distilgpt2')
 
@@ -21,10 +40,10 @@ tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2', bos_token='<|startoftext
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # load steam review dataset
-df_reviews = pd.read_csv('dataset.csv')
+df_reviews = pd.read_csv(input_file)
 
 # sample only 1000 reviews for training
-train_data = df_reviews.sample(1000)
+train_data = df_reviews.sample(sample_size)
 train_data.shape
 
 # modify training text
@@ -153,8 +172,6 @@ print("")
 print("Training complete!")
 
 # save fune-tuned model
-output_dir = 'gamereveiw_distillgpt2'
-
 # Create output directory if needed
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
